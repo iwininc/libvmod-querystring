@@ -40,7 +40,7 @@ varnish v1 -vcl+backend {
 	import ${vmod_querystring};
 
 	sub vcl_hash {
-		set req.url = querystring.filter(req.url,
+		set req.url = querystring.filter_(req.url,
 			"utm_source" + querystring.filtersep() +
 			"utm_medium" + querystring.filtersep() +
 			"utm_campaign");

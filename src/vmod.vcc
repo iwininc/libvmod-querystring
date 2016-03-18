@@ -50,17 +50,17 @@ Example
 $Function STRING filtersep()
 
 Description
-   Returns the separator needed by the filter and filter_except functions
+   Returns the separator needed by the filter_ and filter_except functions
 
 
-$Function STRING filter(STRING, STRING_LIST)
+$Function STRING filter_(STRING, STRING_LIST)
 
 Description
    Returns the given URL without the listed parameters
 Example
    .. sourcecode::
 
-      set req.url = querystring.filter(req.url,
+      set req.url = querystring.filter_(req.url,
         "utm_source" + querystring.filtersep() +
         "utm_medium" + querystring.filtersep() +
         "utm_campaign");
@@ -73,7 +73,7 @@ Description
 Example
    .. sourcecode::
 
-      set req.url = querystring.filter(req.url,
+      set req.url = querystring.filter_(req.url,
                                        "q" + querystring.filtersep() + "p");
 
 $Function STRING regfilter(STRING, STRING)

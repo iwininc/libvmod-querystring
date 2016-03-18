@@ -509,7 +509,7 @@ vmod_filtersep(VRT_CTX)
 }
 
 const char *
-vmod_filter(VRT_CTX, const char *url, const char *params, ...)
+vmod_filter_(VRT_CTX, const char *url, const char *params, ...)
 {
 	struct qs_filter qsf;
 	const char *res;
