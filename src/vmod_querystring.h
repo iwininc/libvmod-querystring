@@ -72,7 +72,7 @@ struct qs_filter {
 	union {
 		struct qs_list	names;
 		void		*regex;
-		const char	*glob;
+		const char	*str;
 	};
 	qs_match		*match;
 };

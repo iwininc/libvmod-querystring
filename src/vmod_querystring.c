@@ -309,7 +309,7 @@ qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 	if (p == NULL)
 		return (!keep);
 
-	match = fnmatch(qsf->glob, p, 0);
+	match = fnmatch(qsf->str, p, 0);
 	free(p);
 
 	switch (match) {
@@ -323,7 +323,7 @@ qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 	 * logged but the query-string is kept intact.
 	 */
 	VSLb(ctx->vsl, SLT_Error, "querystring.globfilter: wrong pattern `%s'",
-	    qsf->glob);
+	    qsf->str);
 	return (keep);
 }
 
@@ -630,7 +630,7 @@ vmod_globfilter(VRT_CTX, const char *url, const char *glob)
 
 	memset(&qsf, 0, sizeof qsf);
 	qsf.match = &qs_match_glob;
-	qsf.glob = glob;
+	qsf.str = glob;
 
 	res = qs_filter(ctx, url, &qsf, 0);
 
@@ -649,7 +649,7 @@ vmod_globfilter_except(VRT_CTX, const char *url, const char *glob)
 
 	memset(&qsf, 0, sizeof qsf);
 	qsf.match = &qs_match_glob;
-	qsf.glob = glob;
+	qsf.str = glob;
 
 	res = qs_filter(ctx, url, &qsf, 1);
 
