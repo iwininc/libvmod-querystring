@@ -76,3 +76,9 @@ struct qs_filter {
 	qs_match		*match;
 	int			keep;
 };
+
+struct vmod_querystring_filter {
+	unsigned			magic;
+#define VMOD_QUERYSTRING_FILTER_MAGIC	0xbe8ecdb4
+	VTAILQ_HEAD(, qs_filter)	filters;
+};

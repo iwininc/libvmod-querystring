@@ -659,3 +659,81 @@ vmod_globfilter_except(VRT_CTX, const char *url, const char *glob)
 	QS_LOG_RETURN(ctx, res);
 	return (res);
 }
+
+/* -------------------------------------------------------------------- */
+
+VCL_VOID
+vmod_filter__init(VRT_CTX, struct vmod_querystring_filter **objp,
+    const char *vcl_name)
+{
+
+	(void)ctx;
+	(void)objp;
+	(void)vcl_name;
+}
+
+VCL_VOID
+vmod_filter__fini(struct vmod_querystring_filter **objp)
+{
+
+	(void)objp;
+}
+
+VCL_VOID
+vmod_filter_add_name(VRT_CTX, struct vmod_querystring_filter *obj,
+    VCL_STRING name)
+{
+
+	(void)ctx;
+	(void)obj;
+	(void)name;
+}
+
+VCL_VOID
+vmod_filter_add_glob(VRT_CTX, struct vmod_querystring_filter *obj,
+    VCL_STRING glob)
+{
+
+	(void)ctx;
+	(void)obj;
+	(void)glob;
+}
+
+
+VCL_VOID
+vmod_filter_add_regex(VRT_CTX, struct vmod_querystring_filter *obj,
+    VCL_STRING regex)
+{
+
+	(void)ctx;
+	(void)obj;
+	(void)regex;
+	(void)obj;
+	(void)regex;
+}
+
+VCL_STRING
+vmod_filter_apply(VRT_CTX, struct vmod_querystring_filter *obj,
+    VCL_STRING src, VCL_ENUM mode)
+{
+
+	(void)ctx;
+	(void)obj;
+	(void)src;
+	(void)mode;
+	INCOMPL();
+	return (NULL);
+}
+
+VCL_STRING
+vmod_filter_extract(VRT_CTX, struct vmod_querystring_filter *obj,
+    VCL_STRING src, VCL_ENUM mode)
+{
+
+	(void)ctx;
+	(void)obj;
+	(void)src;
+	(void)mode;
+	INCOMPL();
+	return (NULL);
+}
