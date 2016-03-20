@@ -65,7 +65,8 @@ struct qs_name {
 
 struct qs_filter;
 
-typedef int qs_match(VRT_CTX, const char *, size_t, const struct qs_filter *);
+typedef int qs_match(VRT_CTX, const char *, size_t, const struct qs_filter *,
+    unsigned keep);
 
 struct qs_filter {
 	union {
@@ -74,7 +75,6 @@ struct qs_filter {
 		const char	*glob;
 	};
 	qs_match		*match;
-	int			keep;
 };
 
 struct vmod_querystring_filter {

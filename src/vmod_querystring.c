@@ -251,7 +251,8 @@ qs_append(char **begin, const char *end, const char *string, size_t len)
 }
 
 static int __match_proto__(qs_match)
-qs_match_list(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf)
+qs_match_list(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
+    unsigned keep)
 {
 	const struct qs_list *names;
 	struct qs_name *n;
@@ -263,13 +264,14 @@ qs_match_list(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf)
 
 	VSTAILQ_FOREACH(n, names, list)
 		if (strlen(n->name) == len && !strncmp(s, n->name, len))
-			return (!qsf->keep);
+			return (!keep);
 
-	return (qsf->keep);
+	return (keep);
 }
 
 static int __match_proto__(qs_match)
-qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf)
+qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
+    unsigned keep)
 {
 	int match;
 	char *p;
@@ -288,15 +290,16 @@ qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf)
 	 */
 	p = strndup(s, len);
 	if (p == NULL)
-		return (!qsf->keep);
+		return (!keep);
 
 	match = VRT_re_match(ctx, p, qsf->regex);
 	free(p);
-	return (match ^ qsf->keep);
+	return (match ^ keep);
 }
 
 static int __match_proto__(qs_match)
-qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf)
+qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
+    unsigned keep)
 {
 	int match;
 	char *p;
@@ -304,16 +307,16 @@ qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf)
 	/* See qs_match_regex for the explanation */
 	p = strndup(s, len);
 	if (p == NULL)
-		return (!qsf->keep);
+		return (!keep);
 
 	match = fnmatch(qsf->glob, p, 0);
 	free(p);
 
 	switch (match) {
 	case FNM_NOMATCH:
-		return (qsf->keep);
+		return (keep);
 	case 0:
-		return (!qsf->keep);
+		return (!keep);
 	}
 
 	/* NB: If the fnmatch failed because of a wrong pattern, the error is
@@ -321,7 +324,7 @@ qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf)
 	 */
 	VSLb(ctx->vsl, SLT_Error, "querystring.globfilter: wrong pattern `%s'",
 	    qsf->glob);
-	return (qsf->keep);
+	return (keep);
 }
 
 static void *
@@ -340,7 +343,8 @@ qs_re_init(VRT_CTX, const char *regex)
 }
 
 static const char*
-qs_apply(VRT_CTX, const char *url, const char *qs, const struct qs_filter *qsf)
+qs_apply(VRT_CTX, const char *url, const char *qs, const struct qs_filter *qsf,
+    unsigned keep)
 {
 	const char *cursor, *param_pos, *equal_pos;
 	char *begin, *end;
@@ -369,7 +373,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, const struct qs_filter *qsf)
 		name_len = (equal_pos ? equal_pos : cursor) - param_pos;
 		match = name_len == 0;
 		if (!match && qsf->match != NULL)
-			match = qsf->match(ctx, param_pos, name_len, qsf);
+			match = qsf->match(ctx, param_pos, name_len, qsf, keep);
 
 		if (!match) {
 			qs_append(&begin, end, param_pos, cursor - param_pos);
@@ -400,7 +404,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, const struct qs_filter *qsf)
 }
 
 static const char *
-qs_filter(VRT_CTX, const char *url, const struct qs_filter *qsf)
+qs_filter(VRT_CTX, const char *url, const struct qs_filter *qsf, unsigned keep)
 {
 	const char *qs, *res;
 
@@ -409,7 +413,7 @@ qs_filter(VRT_CTX, const char *url, const struct qs_filter *qsf)
 		return (res);
 
 	qs = res;
-	return (qs_apply(ctx, url, qs, qsf));
+	return (qs_apply(ctx, url, qs, qsf, keep));
 }
 
 static int
@@ -459,9 +463,8 @@ vmod_clean(VRT_CTX, const char *url)
 
 	memset(&qsf, 0, sizeof qsf);
 	qsf.match = NULL;
-	qsf.keep = 0;
 
-	res = qs_filter(ctx, url, &qsf);
+	res = qs_filter(ctx, url, &qsf, 0);
 
 	QS_LOG_RETURN(ctx, res);
 	return (res);
@@ -522,7 +525,6 @@ vmod_filter_(VRT_CTX, const char *url, const char *params, ...)
 
 	memset(&qsf, 0, sizeof qsf);
 	qsf.match = &qs_match_list;
-	qsf.keep = 0;
 
 	VSTAILQ_INIT(&qsf.names);
 
@@ -533,7 +535,7 @@ vmod_filter_(VRT_CTX, const char *url, const char *params, ...)
 	retval = qs_build_list(ctx->ws, &qsf.names, params, ap);
 	va_end(ap);
 
-	res = retval == 0 ? qs_filter(ctx, url, &qsf) : url;
+	res = retval == 0 ? qs_filter(ctx, url, &qsf, 0) : url;
 	WS_Reset(ctx->ws, snap);
 
 	QS_LOG_RETURN(ctx, res);
@@ -554,7 +556,6 @@ vmod_filter_except(VRT_CTX, const char *url, const char *params, ...)
 
 	memset(&qsf, 0, sizeof qsf);
 	qsf.match = &qs_match_list;
-	qsf.keep = 1;
 
 	VSTAILQ_INIT(&qsf.names);
 
@@ -565,7 +566,7 @@ vmod_filter_except(VRT_CTX, const char *url, const char *params, ...)
 	retval = qs_build_list(ctx->ws, &qsf.names, params, ap);
 	va_end(ap);
 
-	res = retval == 0 ? qs_filter(ctx, url, &qsf) : url;
+	res = retval == 0 ? qs_filter(ctx, url, &qsf, 1) : url;
 	WS_Reset(ctx->ws, snap);
 
 	QS_LOG_RETURN(ctx, res);
@@ -582,14 +583,13 @@ vmod_regfilter(VRT_CTX, const char *url, const char *regex)
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\"", url, regex);
 
 	memset(&qsf, 0, sizeof qsf);
-	qsf.keep = 0;
 	qsf.match = &qs_match_regex;
 	qsf.regex = qs_re_init(ctx, regex);
 
 	if (qsf.regex == NULL)
 		return (url);
 
-	res = qs_filter(ctx, url, &qsf);
+	res = qs_filter(ctx, url, &qsf, 0);
 
 	VRT_re_fini(qsf.regex);
 	QS_LOG_RETURN(ctx, res);
@@ -606,14 +606,13 @@ vmod_regfilter_except(VRT_CTX, const char *url, const char *regex)
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\"", url, regex);
 
 	memset(&qsf, 0, sizeof qsf);
-	qsf.keep = 1;
 	qsf.match = &qs_match_regex;
 	qsf.regex = qs_re_init(ctx, regex);
 
 	if (qsf.regex == NULL)
 		return (url);
 
-	res = qs_filter(ctx, url, &qsf);
+	res = qs_filter(ctx, url, &qsf, 1);
 
 	VRT_re_fini(qsf.regex);
 	QS_LOG_RETURN(ctx, res);
@@ -630,11 +629,10 @@ vmod_globfilter(VRT_CTX, const char *url, const char *glob)
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\"", url, glob);
 
 	memset(&qsf, 0, sizeof qsf);
-	qsf.keep = 0;
 	qsf.match = &qs_match_glob;
 	qsf.glob = glob;
 
-	res = qs_filter(ctx, url, &qsf);
+	res = qs_filter(ctx, url, &qsf, 0);
 
 	QS_LOG_RETURN(ctx, res);
 	return (res);
@@ -650,11 +648,10 @@ vmod_globfilter_except(VRT_CTX, const char *url, const char *glob)
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\"", url, glob);
 
 	memset(&qsf, 0, sizeof qsf);
-	qsf.keep = 1;
 	qsf.match = &qs_match_glob;
 	qsf.glob = glob;
 
-	res = qs_filter(ctx, url, &qsf);
+	res = qs_filter(ctx, url, &qsf, 1);
 
 	QS_LOG_RETURN(ctx, res);
 	return (res);
