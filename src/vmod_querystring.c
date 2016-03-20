@@ -705,7 +705,7 @@ VCL_VOID
 vmod_filter__fini(struct vmod_querystring_filter **objp)
 {
 	struct vmod_querystring_filter *obj;
-	struct qs_filter *qsf;
+	struct qs_filter *qsf, *tmp;
 
 	ASSERT_CLI();
 	AN(objp);
@@ -714,9 +714,12 @@ vmod_filter__fini(struct vmod_querystring_filter **objp)
 	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
 	// XXX: TAKE_OBJ_NOTNULL(obj, objp, VMOD_QUERYSTRING_FILTER_MAGIC);
 
-	VTAILQ_FOREACH(qsf, &obj->filters, list) {
+	VTAILQ_FOREACH_SAFE(qsf, &obj->filters, list, tmp) {
 		CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
-		INCOMPL();
+		if (qsf->free != NULL)
+			INCOMPL();
+		VTAILQ_REMOVE(&obj->filters, qsf, list);
+		FREE_OBJ(qsf);
 	}
 
 	FREE_OBJ(obj);
@@ -726,11 +729,19 @@ VCL_VOID
 vmod_filter_add_name(VRT_CTX, struct vmod_querystring_filter *obj,
     VCL_STRING name)
 {
+	struct qs_filter *qsf;
 
-	(void)ctx;
-	(void)obj;
-	(void)name;
-	(void)qs_match_name;
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+	AN(name);
+
+	ALLOC_OBJ(qsf, QS_FILTER_MAGIC);
+	AN(qsf);
+
+	qsf->str = name;
+	qsf->match = qs_match_name;
+	VTAILQ_INSERT_TAIL(&obj->filters, qsf, list);
 }
 
 VCL_VOID

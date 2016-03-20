@@ -77,6 +77,7 @@ struct qs_filter {
 		const char	*str;
 	};
 	qs_match		*match;
+	void			*free; /* XXX */
 	VTAILQ_ENTRY(qs_filter)	list;
 };
 
