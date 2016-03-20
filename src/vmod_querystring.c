@@ -270,6 +270,15 @@ qs_match_list(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 }
 
 static int __match_proto__(qs_match)
+qs_match_name(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
+    unsigned keep)
+{
+
+	(void)ctx;
+	return (!strncmp(s, qsf->str, len) ^ keep);
+}
+
+static int __match_proto__(qs_match)
 qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
     unsigned keep)
 {
@@ -684,6 +693,7 @@ vmod_filter_add_name(VRT_CTX, struct vmod_querystring_filter *obj,
 	(void)ctx;
 	(void)obj;
 	(void)name;
+	(void)qs_match_name;
 }
 
 VCL_VOID
