@@ -257,7 +257,8 @@ qs_match_list(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 	const struct qs_list *names;
 	struct qs_name *n;
 
-	(void)ctx;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 
 	names = &qsf->names;
 	AZ(VSTAILQ_EMPTY(names));
@@ -274,7 +275,9 @@ qs_match_name(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
     unsigned keep)
 {
 
-	(void)ctx;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
+
 	return (!strncmp(s, qsf->str, len) ^ keep);
 }
 
@@ -284,6 +287,9 @@ qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 {
 	int match;
 	char *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 
 	/* NB: It is not possible to allocate from the workspace because it
 	 * will be reserved. Allocating from the stack is not recommended
@@ -312,6 +318,9 @@ qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 {
 	int match;
 	char *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 
 	/* See qs_match_regex for the explanation */
 	p = strndup(s, len);
@@ -359,6 +368,9 @@ qs_apply(VRT_CTX, const char *url, const char *qs, const struct qs_filter *qsf,
 	char *begin, *end;
 	unsigned available;
 	int name_len, match;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 
 	AN(url);
 	AN(qs);
@@ -417,6 +429,9 @@ qs_filter(VRT_CTX, const char *url, const struct qs_filter *qsf, unsigned keep)
 {
 	const char *qs, *res;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
+
 	res = NULL;
 	if (qs_empty(ctx->ws, url, &res))
 		return (res);
@@ -470,8 +485,7 @@ vmod_clean(VRT_CTX, const char *url)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	QS_LOG_CALL(ctx, "\"%s\"", url);
 
-	memset(&qsf, 0, sizeof qsf);
-	qsf.match = NULL;
+	INIT_OBJ(&qsf, QS_FILTER_MAGIC);
 
 	res = qs_filter(ctx, url, &qsf, 0);
 
@@ -532,7 +546,7 @@ vmod_filter_(VRT_CTX, const char *url, const char *params, ...)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\", ...", url, params);
 
-	memset(&qsf, 0, sizeof qsf);
+	INIT_OBJ(&qsf, QS_FILTER_MAGIC);
 	qsf.match = &qs_match_list;
 
 	VSTAILQ_INIT(&qsf.names);
@@ -563,7 +577,7 @@ vmod_filter_except(VRT_CTX, const char *url, const char *params, ...)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\", ...", url, params);
 
-	memset(&qsf, 0, sizeof qsf);
+	INIT_OBJ(&qsf, QS_FILTER_MAGIC);
 	qsf.match = &qs_match_list;
 
 	VSTAILQ_INIT(&qsf.names);
@@ -591,7 +605,7 @@ vmod_regfilter(VRT_CTX, const char *url, const char *regex)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\"", url, regex);
 
-	memset(&qsf, 0, sizeof qsf);
+	INIT_OBJ(&qsf, QS_FILTER_MAGIC);
 	qsf.match = &qs_match_regex;
 	qsf.regex = qs_re_init(ctx, regex);
 
@@ -614,7 +628,7 @@ vmod_regfilter_except(VRT_CTX, const char *url, const char *regex)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\"", url, regex);
 
-	memset(&qsf, 0, sizeof qsf);
+	INIT_OBJ(&qsf, QS_FILTER_MAGIC);
 	qsf.match = &qs_match_regex;
 	qsf.regex = qs_re_init(ctx, regex);
 
@@ -637,7 +651,7 @@ vmod_globfilter(VRT_CTX, const char *url, const char *glob)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\"", url, glob);
 
-	memset(&qsf, 0, sizeof qsf);
+	INIT_OBJ(&qsf, QS_FILTER_MAGIC);
 	qsf.match = &qs_match_glob;
 	qsf.str = glob;
 
@@ -656,7 +670,7 @@ vmod_globfilter_except(VRT_CTX, const char *url, const char *glob)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	QS_LOG_CALL(ctx, "\"%s\", \"%s\"", url, glob);
 
-	memset(&qsf, 0, sizeof qsf);
+	INIT_OBJ(&qsf, QS_FILTER_MAGIC);
 	qsf.match = &qs_match_glob;
 	qsf.str = glob;
 
@@ -700,8 +714,10 @@ vmod_filter__fini(struct vmod_querystring_filter **objp)
 	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
 	// XXX: TAKE_OBJ_NOTNULL(obj, objp, VMOD_QUERYSTRING_FILTER_MAGIC);
 
-	VTAILQ_FOREACH(qsf, &obj->filters, list)
+	VTAILQ_FOREACH(qsf, &obj->filters, list) {
+		CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 		INCOMPL();
+	}
 
 	FREE_OBJ(obj);
 }
