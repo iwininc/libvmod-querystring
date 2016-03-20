@@ -672,17 +672,38 @@ VCL_VOID
 vmod_filter__init(VRT_CTX, struct vmod_querystring_filter **objp,
     const char *vcl_name)
 {
+	struct vmod_querystring_filter *obj;
 
-	(void)ctx;
-	(void)objp;
-	(void)vcl_name;
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(objp);
+	AZ(*objp);
+	AN(vcl_name);
+
+	ALLOC_OBJ(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+	AN(obj);
+
+	VTAILQ_INIT(&obj->filters);
+	*objp = obj;
 }
 
 VCL_VOID
 vmod_filter__fini(struct vmod_querystring_filter **objp)
 {
+	struct vmod_querystring_filter *obj;
+	struct qs_filter *qsf;
 
-	(void)objp;
+	ASSERT_CLI();
+	AN(objp);
+	obj = *objp;
+	*objp = NULL;
+	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+	// XXX: TAKE_OBJ_NOTNULL(obj, objp, VMOD_QUERYSTRING_FILTER_MAGIC);
+
+	VTAILQ_FOREACH(qsf, &obj->filters, list)
+		INCOMPL();
+
+	FREE_OBJ(obj);
 }
 
 VCL_VOID

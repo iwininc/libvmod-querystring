@@ -75,6 +75,7 @@ struct qs_filter {
 		const char	*str;
 	};
 	qs_match		*match;
+	VTAILQ_ENTRY(qs_filter)	list;
 };
 
 struct vmod_querystring_filter {
