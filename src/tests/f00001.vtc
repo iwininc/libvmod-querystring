@@ -38,6 +38,7 @@ varnish v1 -vcl {
 	sub vcl_init {
 		new noop = querystring.filter();
 		noop.add_name("_");
+		noop.add_glob("utm_*");
 	}
 } -start
 

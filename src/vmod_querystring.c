@@ -748,10 +748,19 @@ VCL_VOID
 vmod_filter_add_glob(VRT_CTX, struct vmod_querystring_filter *obj,
     VCL_STRING glob)
 {
+	struct qs_filter *qsf;
 
-	(void)ctx;
-	(void)obj;
-	(void)glob;
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+	AN(glob);
+
+	ALLOC_OBJ(qsf, QS_FILTER_MAGIC);
+	AN(qsf);
+
+	qsf->str = glob;
+	qsf->match = qs_match_glob;
+	VTAILQ_INSERT_TAIL(&obj->filters, qsf, list);
 }
 
 
