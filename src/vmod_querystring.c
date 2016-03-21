@@ -36,8 +36,10 @@
 #include <stdarg.h>
 
 #include <vdef.h>
+#include <vcl.h>
 #include <vrt.h>
 #include <vre.h>
+#include <vsb.h>
 #include <vqueue.h>
 #include <cache/cache.h>
 
@@ -352,10 +354,10 @@ qs_re_init(VRT_CTX, const char *regex)
 	const char *error;
 	int error_offset;
 
-	AN(ctx->vsl);
+	(void)ctx;
 
 	re = VRE_compile(regex, 0, &error, &error_offset);
-	VSLb(ctx->vsl, SLT_Error, "Regex error (%s): '%s' pos %d", error,
+	VSL(SLT_Error, 0, "Regex error (%s): '%s' pos %d", error,
 	    regex, error_offset);
 	return (re);
 }
@@ -717,7 +719,7 @@ vmod_filter__fini(struct vmod_querystring_filter **objp)
 	VTAILQ_FOREACH_SAFE(qsf, &obj->filters, list, tmp) {
 		CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 		if (qsf->free != NULL)
-			INCOMPL();
+			qsf->free(qsf->ptr);
 		VTAILQ_REMOVE(&obj->filters, qsf, list);
 		FREE_OBJ(qsf);
 	}
@@ -768,12 +770,28 @@ VCL_VOID
 vmod_filter_add_regex(VRT_CTX, struct vmod_querystring_filter *obj,
     VCL_STRING regex)
 {
+	struct qs_filter *qsf;
 
-	(void)ctx;
-	(void)obj;
-	(void)regex;
-	(void)obj;
-	(void)regex;
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+	AN(regex);
+
+	ALLOC_OBJ(qsf, QS_FILTER_MAGIC);
+	AN(qsf);
+
+	qsf->ptr = qs_re_init(ctx, regex);
+	if (qsf->ptr == NULL) {
+		AN(ctx->msg);
+		VSB_printf(ctx->msg, "vmod-querystring: invalid regex: %s\n",
+		    regex);
+		VRT_handling(ctx, VCL_RET_FAIL);
+		return;
+	}
+
+	qsf->match = qs_match_regex;
+	qsf->free = VRT_re_fini;
+	VTAILQ_INSERT_TAIL(&obj->filters, qsf, list);
 }
 
 VCL_STRING

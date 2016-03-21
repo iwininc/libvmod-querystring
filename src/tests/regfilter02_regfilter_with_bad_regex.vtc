@@ -56,7 +56,7 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-logexpect l1 -v v1 {
+logexpect l1 -v v1 -g raw {
 	expect * * Error 'utm\(_\.\*'
 	expect * * Error 'utm\(_\.\*'
 	expect * * Error 'utm\(_\.\*'
