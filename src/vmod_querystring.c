@@ -811,11 +811,24 @@ VCL_STRING
 vmod_filter_extract(VRT_CTX, struct vmod_querystring_filter *obj,
     VCL_STRING src, VCL_ENUM mode)
 {
+	const char *res, *qs;
 
-	(void)ctx;
-	(void)obj;
-	(void)src;
-	(void)mode;
-	INCOMPL();
-	return (NULL);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+	AN(mode);
+
+	if (src == NULL)
+		return (NULL);
+
+	qs = strchr(src, '?');
+	if (qs == NULL || qs[1] == '\0')
+		return (NULL);
+
+	res = vmod_filter_apply(ctx, obj, qs, mode);
+	AN(res);
+	if (*res == '?')
+		res++;
+	else
+		AZ(*res);
+	return (res);
 }
