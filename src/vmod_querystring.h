@@ -65,10 +65,10 @@ struct qs_name {
 
 struct qs_filter;
 
-typedef int qs_match(VRT_CTX, const char *, size_t, const struct qs_filter *,
-    unsigned keep);
+typedef int qs_match_f(VRT_CTX, const char *, size_t, const struct qs_filter *,
+    unsigned);
 
-typedef void qs_free(void *);
+typedef void qs_free_f(void *);
 
 struct qs_filter {
 	unsigned		magic;
@@ -79,8 +79,8 @@ struct qs_filter {
 		void		*ptr;
 		const char	*str;
 	};
-	qs_match		*match;
-	qs_free			*free;
+	qs_match_f		*match;
+	qs_free_f		*free;
 	VTAILQ_ENTRY(qs_filter)	list;
 };
 

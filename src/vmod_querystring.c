@@ -252,7 +252,7 @@ qs_append(char **begin, const char *end, const char *string, size_t len)
 	*begin += len;
 }
 
-static int __match_proto__(qs_match)
+static int __match_proto__(qs_match_f)
 qs_match_list(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
     unsigned keep)
 {
@@ -272,7 +272,7 @@ qs_match_list(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 	return (keep);
 }
 
-static int __match_proto__(qs_match)
+static int __match_proto__(qs_match_f)
 qs_match_name(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
     unsigned keep)
 {
@@ -283,7 +283,7 @@ qs_match_name(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 	return (!strncmp(s, qsf->str, len) ^ keep);
 }
 
-static int __match_proto__(qs_match)
+static int __match_proto__(qs_match_f)
 qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
     unsigned keep)
 {
@@ -314,7 +314,7 @@ qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 	return (match ^ keep);
 }
 
-static int __match_proto__(qs_match)
+static int __match_proto__(qs_match_f)
 qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
     unsigned keep)
 {
