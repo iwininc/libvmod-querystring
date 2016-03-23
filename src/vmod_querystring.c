@@ -31,9 +31,10 @@
  */
 
 #include <fnmatch.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include <vdef.h>
 #include <vcl.h>
@@ -363,7 +364,7 @@ qs_re_init(VRT_CTX, const char *regex)
 }
 
 static const char*
-qs_apply(VRT_CTX, const char *url, const char *qs, const struct qs_filter *qsf,
+qs_apply_(VRT_CTX, const char *url, const char *qs, const struct qs_filter *qsf,
     unsigned keep)
 {
 	const char *cursor, *param_pos, *equal_pos;
@@ -439,7 +440,7 @@ qs_filter(VRT_CTX, const char *url, const struct qs_filter *qsf, unsigned keep)
 		return (res);
 
 	qs = res;
-	return (qs_apply(ctx, url, qs, qsf, keep));
+	return (qs_apply_(ctx, url, qs, qsf, keep));
 }
 
 static int
