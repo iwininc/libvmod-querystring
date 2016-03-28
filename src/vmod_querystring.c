@@ -135,7 +135,7 @@ qs_sort(struct ws *ws, const char *url, const char *qs)
 {
 	struct query_param *end, *params;
 	int count, head, i, last, prev, sorted, tail;
-	char *pos, *res;
+	char *pos, *res, sep;
 	const char *c, *cur;
 	unsigned available;
 	size_t len;
@@ -154,7 +154,7 @@ qs_sort(struct ws *ws, const char *url, const char *qs)
 		return (url);
 	}
 
-	len = strlen(res);
+	len = strlen(url);
 	available -= len + 1;
 
 	params = (void *)PRNDUP(res + len + 1);
@@ -220,25 +220,20 @@ qs_sort(struct ws *ws, const char *url, const char *qs)
 	params[last].len = c - params[last].val;
 
 	/* copy the url parts */
-	len = qs - url + 1;
+	len = qs - url;
 	(void)memcpy(res, url, len);
 	pos = res + len;
 	count = tail - head;
+	sep = '?';
 
-	for (;count > 0; count--, ++head)
+	for (;count >= 0; count--, ++head)
 		if (params[head].len > 0) {
+			*pos = sep;
+			pos++;
+			sep = '&';
 			(void)memcpy(pos, params[head].val, params[head].len);
 			pos += params[head].len;
-			*pos = '&';
-			pos++;
 		}
-
-	if (params[head].len > 0) {
-		(void)memcpy(pos, params[head].val, params[head].len);
-		pos += params[head].len;
-	}
-	else
-		pos--; /* override the trailing '&' */
 
 	*pos = '\0';
 
