@@ -692,6 +692,117 @@ vmod_globfilter_except(VRT_CTX, const char *url, const char *glob)
 
 /* -------------------------------------------------------------------- */
 
+static unsigned
+qs_match(VRT_CTX, const struct vmod_querystring_filter *obj,
+    const char *name, size_t len, unsigned keep)
+{
+	struct qs_filter *qsf;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+
+	if (len == 0)
+		return (0);
+
+	VTAILQ_FOREACH(qsf, &obj->filters, list) {
+		CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
+		if (qsf->match(ctx, name, len, qsf, keep))
+			return (keep);
+	}
+
+	return (!keep);
+}
+
+static const char *
+qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
+    const struct vmod_querystring_filter *obj)
+{
+	struct query_param *params, *p;
+	const char *nm, *eq;
+	char *res, *cur, sep;
+	size_t len, nm_len;
+	ssize_t ws_len;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+	AN(url);
+	AN(qs);
+	assert(url <= qs);
+	assert(*qs == '?');
+
+	len = strlen(url);
+	res = WS_Alloc(ctx->ws, len + 1);
+	if (res == NULL)
+		return (url);
+
+	params = (void *)WS_Snapshot(ctx->ws);
+	ws_len = (ssize_t)WS_Reserve(ctx->ws, 0);
+
+	p = (void *)PRNDUP(params);
+	ws_len -= pdiff(params, p);
+	params = p;
+
+	len = qs - url;
+	(void)snprintf(res, len + 1, "%s", url);
+	cur = res + len;
+	AZ(*cur);
+
+	qs++;
+	AN(*qs);
+
+	while (*qs != '\0') {
+		nm = qs;
+		eq = NULL;
+
+		while (!EOQP(*qs)) {
+			if (eq == NULL && *qs == '=')
+				eq = qs;
+			qs++;
+		}
+
+		nm_len = (eq != NULL ? eq : qs) - nm;
+
+		if (qs_match(ctx, obj, nm, nm_len, keep)) {
+			AN(nm_len);
+			if (ws_len < (ssize_t)sizeof *p) {
+				ws_len = -1;
+				break;
+			}
+			p->val = nm;
+			p->len = qs - nm;
+			p++;
+			ws_len -= sizeof *p;
+		}
+
+		if (*qs == '&')
+			qs++;
+	}
+
+	if (ws_len < 0) {
+		WS_Release(ctx->ws, 0);
+		WS_Reset(ctx->ws, res);
+		return (url);
+	}
+
+	sep = '?';
+	while (params < p) {
+		AZ(*cur);
+		*cur = sep;
+		cur++;
+		(void)snprintf(cur, params->len + 1, "%s", params->val);
+		sep = '&';
+		cur += params->len;
+		params++;
+	}
+
+	assert(params == p);
+	AZ(*cur);
+	WS_Release(ctx->ws, 0);
+
+	return (res);
+}
+
 VCL_VOID
 vmod_filter__init(VRT_CTX, struct vmod_querystring_filter **objp,
     const char *vcl_name)
@@ -806,13 +917,27 @@ VCL_STRING
 vmod_filter_apply(VRT_CTX, struct vmod_querystring_filter *obj,
     VCL_STRING src, VCL_ENUM mode)
 {
+	const char *res, *tmp, *qs;
+	unsigned keep;
 
-	(void)ctx;
-	(void)obj;
-	(void)src;
-	(void)mode;
-	INCOMPL();
-	return (NULL);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
+	AN(mode);
+
+	tmp = NULL;
+	if (qs_empty(ctx->ws, src, &tmp))
+		return (tmp);
+
+	qs = tmp;
+	keep = 0;
+
+	if (!strcmp(mode, "keep"))
+		keep = 1;
+	else if (strcmp(mode, "drop"))
+		WRONG("Unknown filtering mode");
+
+	res = qs_apply(ctx, src, qs, keep, obj);
+	return (res);
 }
 
 VCL_STRING
