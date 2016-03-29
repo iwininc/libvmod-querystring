@@ -134,18 +134,12 @@ You can use regfilter to specify a list of arguments that must not be removed
    set req.url = querystring.regfilter(req.url, "^(?!param1|param2)");
 
 
-$Object filter()
+$Object filter(BOOL sort = 0)
 $Method VOID .add_name(STRING)
 $Method VOID .add_glob(STRING)
 $Method VOID .add_regex(STRING)
 $Method STRING .apply(STRING, ENUM {keep, drop} mode = "drop")
 $Method STRING .extract(STRING, ENUM {keep, drop} mode = "drop")
-
-ACKNOWLEDGMENT
-==============
-
-The sort algorithm is a mix of Jason Mooberry's Skwurly and my own QuerySort
-with regards for the Varnish workspace memory model of the worker threads.
 
 
 SEE ALSO

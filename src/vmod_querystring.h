@@ -88,4 +88,5 @@ struct vmod_querystring_filter {
 	unsigned			magic;
 #define VMOD_QUERYSTRING_FILTER_MAGIC	0xbe8ecdb4
 	VTAILQ_HEAD(, qs_filter)	filters;
+	unsigned			sort;
 };

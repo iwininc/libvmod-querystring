@@ -56,6 +56,12 @@
 
 struct vmod_querystring_filter qs_clean_filter = {
 	.magic = VMOD_QUERYSTRING_FILTER_MAGIC,
+	.sort = 0,
+};
+
+struct vmod_querystring_filter qs_sort_filter = {
+	.magic = VMOD_QUERYSTRING_FILTER_MAGIC,
+	.sort = 1,
 };
 
 /***********************************************************************
@@ -126,130 +132,6 @@ qs_remove(struct ws *ws, const char *url)
 
 	qs = res;
 	return (qs_truncate(ws, url, qs));
-}
-
-static int
-qs_cmp_(const char *a, const char *b)
-{
-
-	while (*a == *b) {
-		if (EOQP(*a) || EOQP(*b))
-			return (0);
-		a++;
-		b++;
-	}
-	return (*a - *b);
-}
-
-static const char *
-qs_sort(struct ws *ws, const char *url, const char *qs)
-{
-	struct query_param *end, *params;
-	int count, head, i, last, prev, sorted, tail;
-	char *pos, *res, sep;
-	const char *c, *cur;
-	unsigned available;
-	size_t len;
-
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	AN(url);
-	AN(qs);
-	assert(url <= qs);
-
-	/* reserve some memory */
-	res = WS_Snapshot(ws);
-	available = WS_Reserve(ws, 0);
-
-	if (res == NULL) {
-		WS_Release(ws, 0);
-		return (url);
-	}
-
-	len = strlen(url);
-	available -= len + 1;
-
-	params = (void *)PRNDUP(res + len + 1);
-	end = params + (available / sizeof *params);
-
-	/* initialize the params array */
-	head = 10;
-
-	if (&params[head + 1] >= end)
-		head = 0;
-
-	if (&params[head + 1] >= end) {
-		WS_Release(ws, 0);
-		return (url);
-	}
-
-	tail = head;
-	last = head;
-
-	/* search and sort params */
-	sorted = 1;
-	c = qs + 1;
-	params[head].val = c;
-
-	for (; *c != '\0' && &params[tail+1] < end; c++) {
-		if (*c != '&')
-			continue;
-
-		cur = c + 1;
-		params[last].len = c - params[last].val;
-
-		if (head > 0 && qs_cmp_(params[head].val, cur) > -1) {
-			sorted = 0;
-			params[--head].val = cur;
-			last = head;
-			continue;
-		}
-
-		if (qs_cmp_(params[tail].val, cur) < 1) {
-			params[++tail].val = cur;
-			last = tail;
-			continue;
-		}
-
-		sorted = 0;
-
-		i = tail++;
-		params[tail] = params[i];
-
-		prev = i - 1;
-		while (i > head && qs_cmp_(params[prev].val, cur) > -1)
-			params[i--] = params[prev--];
-
-		params[i].val = cur;
-		last = i;
-	}
-
-	if (sorted || &params[tail + 1] >= end || tail - head < 1) {
-		WS_Release(ws, 0);
-		return (url);
-	}
-
-	params[last].len = c - params[last].val;
-
-	/* copy the url parts */
-	len = qs - url;
-	(void)memcpy(res, url, len);
-	pos = res + len;
-	count = tail - head;
-	sep = '?';
-
-	for (;count >= 0; count--, ++head)
-		if (params[head].len > 0) {
-			*pos = sep;
-			pos++;
-			sep = '&';
-			(void)memcpy(pos, params[head].val, params[head].len);
-			pos += params[head].len;
-		}
-
-	*pos = '\0';
-
-	WS_ReleaseP(ws, pos + 1);
-	return (res);
 }
 
 static void
@@ -509,25 +391,6 @@ vmod_remove(VRT_CTX, const char *url)
 }
 
 const char *
-vmod_sort(VRT_CTX, const char *url)
-{
-	const char *res, *qs;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	QS_LOG_CALL(ctx, "\"%s\"", url);
-
-	res = NULL;
-	if (qs_empty(ctx->ws, url, &res))
-		return (res);
-
-	qs = res;
-	res = qs_sort(ctx->ws, url, qs);
-
-	QS_LOG_RETURN(ctx, res);
-	return (res);
-}
-
-const char *
 vmod_filtersep(VRT_CTX)
 {
 
@@ -683,6 +546,26 @@ vmod_globfilter_except(VRT_CTX, const char *url, const char *glob)
 
 /* -------------------------------------------------------------------- */
 
+int
+qs_cmp(const void *v1, const void *v2)
+{
+	const struct query_param *p1, *p2;
+	size_t len;
+	int cmp;
+
+	AN(v1);
+	AN(v2);
+	p1 = v1;
+	p2 = v2;
+
+	len = p1->len < p2->len ? p1->len : p2->len;
+	cmp = strncmp(p1->val, p2->val, len);
+
+	if (cmp || p1->len == p2->len)
+		return (cmp);
+	return (p1->len - p2->len);
+}
+
 static unsigned
 qs_match(VRT_CTX, const struct vmod_querystring_filter *obj,
     const char *name, size_t len, unsigned keep)
@@ -781,6 +664,9 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 		return (url);
 	}
 
+	if (obj->sort)
+		qsort(params, cnt, sizeof *params, qs_cmp);
+
 	sep = '?';
 	while (cnt > 0) {
 		assert(params < p);
@@ -803,7 +689,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 
 VCL_VOID
 vmod_filter__init(VRT_CTX, struct vmod_querystring_filter **objp,
-    const char *vcl_name)
+    const char *vcl_name, VCL_BOOL sort)
 {
 	struct vmod_querystring_filter *obj;
 
@@ -817,6 +703,7 @@ vmod_filter__init(VRT_CTX, struct vmod_querystring_filter **objp,
 	AN(obj);
 
 	VTAILQ_INIT(&obj->filters);
+	obj->sort = sort;
 	*objp = obj;
 }
 
@@ -970,4 +857,12 @@ vmod_clean(VRT_CTX, VCL_STRING url)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	return (vmod_filter_apply(ctx, &qs_clean_filter, url, "keep"));
+}
+
+VCL_STRING
+vmod_sort(VRT_CTX, VCL_STRING url)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (vmod_filter_apply(ctx, &qs_sort_filter, url, "keep"));
 }
