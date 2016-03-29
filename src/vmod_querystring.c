@@ -51,6 +51,14 @@
 #define EOQP(c) (c == '\0' || c == '&')
 
 /***********************************************************************
+ * Global data structures.
+ */
+
+struct vmod_querystring_filter qs_clean_filter = {
+	.magic = VMOD_QUERYSTRING_FILTER_MAGIC,
+};
+
+/***********************************************************************
  * The static functions below contain the actual implementation of the
  * module with the least possible coupling to Varnish. This helps keep a
  * single code base for all Varnish versions.
@@ -487,23 +495,6 @@ qs_build_list(struct ws *ws, struct qs_list *names, const char *p, va_list ap)
  */
 
 const char *
-vmod_clean(VRT_CTX, const char *url)
-{
-	struct qs_filter qsf;
-	const char *res;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	QS_LOG_CALL(ctx, "\"%s\"", url);
-
-	INIT_OBJ(&qsf, QS_FILTER_MAGIC);
-
-	res = qs_filter(ctx, url, &qsf, 0);
-
-	QS_LOG_RETURN(ctx, res);
-	return (res);
-}
-
-const char *
 vmod_remove(VRT_CTX, const char *url)
 {
 	const char *cleaned_url;
@@ -703,6 +694,9 @@ qs_match(VRT_CTX, const struct vmod_querystring_filter *obj,
 
 	if (len == 0)
 		return (0);
+
+	if (VTAILQ_EMPTY(&obj->filters))
+		return (1);
 
 	VTAILQ_FOREACH(qsf, &obj->filters, list) {
 		CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
@@ -964,4 +958,12 @@ vmod_filter_extract(VRT_CTX, struct vmod_querystring_filter *obj,
 	else
 		AZ(*res);
 	return (res);
+}
+
+VCL_STRING
+vmod_clean(VRT_CTX, VCL_STRING url)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (vmod_filter_apply(ctx, &qs_clean_filter, url, "keep"));
 }

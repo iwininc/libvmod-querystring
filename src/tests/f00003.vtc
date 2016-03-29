@@ -1,6 +1,6 @@
 # libvmod-querystring - querystring manipulation module for Varnish
 #
-# Copyright (C) 2012-2016, Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
+# Copyright (C) 2016, Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,37 +28,56 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-varnishtest "Test clean without querystring vmod"
+varnishtest "Clean empty parameters and query-strings"
 
-server s1 {
-	rxreq
-	expect req.url == "/"
-	txresp -body "ABC\n"
-
-	rxreq
-	expect req.url == "/?"
-	txresp -body "ABC\n"
-} -start
+server s1 "" -start
 
 varnish v1 -vcl+backend {
-} -start
+	import ${vmod_querystring};
 
-varnish v1 -expect n_object == 0
-varnish v1 -expect cache_miss == 0
-varnish v1 -expect cache_hit == 0
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.Cleaned-URL = querystring.clean(req.url);
+	}
+} -start
 
 client c1 {
 	txreq -url "/"
 	rxresp
-	expect resp.status == 200
+	expect resp.http.Cleaned-URL == "/"
 
 	txreq -url "/?"
 	rxresp
-	expect resp.status == 200
+	expect resp.http.Cleaned-URL == "/"
+
+	txreq -url "/?query"
+	rxresp
+	expect resp.http.Cleaned-URL == "/?query"
+
+	txreq -url "/?&query"
+	rxresp
+	expect resp.http.Cleaned-URL == "/?query"
+
+	txreq -url "/?query&"
+	rxresp
+	expect resp.http.Cleaned-URL == "/?query"
+
+	txreq -url "/?&query&"
+	rxresp
+	expect resp.http.Cleaned-URL == "/?query"
+
+	txreq -url "/?&"
+	rxresp
+	expect resp.http.Cleaned-URL == "/"
+
+	txreq -url "/?&&"
+	rxresp
+	expect resp.http.Cleaned-URL == "/"
+
+	txreq -url "/?=empty_name"
+	rxresp
+	expect resp.http.Cleaned-URL == "/"
 } -run
-
-delay .1
-
-varnish v1 -expect n_object == 2
-varnish v1 -expect cache_miss == 2
-varnish v1 -expect cache_hit == 0
