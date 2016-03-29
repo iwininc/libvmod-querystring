@@ -714,7 +714,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 	struct query_param *params, *p;
 	const char *nm, *eq;
 	char *res, *cur, sep;
-	size_t len, nm_len;
+	size_t len, nm_len, cnt;
 	ssize_t ws_len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -742,6 +742,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 	cur = res + len;
 	AZ(*cur);
 
+	cnt = 0;
 	qs++;
 	AN(*qs);
 
@@ -767,6 +768,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 			p->len = qs - nm;
 			p++;
 			ws_len -= sizeof *p;
+			cnt++;
 		}
 
 		if (*qs == '&')
@@ -780,7 +782,8 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 	}
 
 	sep = '?';
-	while (params < p) {
+	while (cnt > 0) {
+		assert(params < p);
 		AZ(*cur);
 		*cur = sep;
 		cur++;
@@ -788,6 +791,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 		sep = '&';
 		cur += params->len;
 		params++;
+		cnt--;
 	}
 
 	assert(params == p);
