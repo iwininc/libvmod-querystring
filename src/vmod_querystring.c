@@ -121,7 +121,7 @@ qs_remove(struct ws *ws, const char *url)
 }
 
 static int
-qs_cmp(const char *a, const char *b)
+qs_cmp_(const char *a, const char *b)
 {
 
 	while (*a == *b) {
@@ -189,14 +189,14 @@ qs_sort(struct ws *ws, const char *url, const char *qs)
 		cur = c + 1;
 		params[last].len = c - params[last].val;
 
-		if (head > 0 && qs_cmp(params[head].val, cur) > -1) {
+		if (head > 0 && qs_cmp_(params[head].val, cur) > -1) {
 			sorted = 0;
 			params[--head].val = cur;
 			last = head;
 			continue;
 		}
 
-		if (qs_cmp(params[tail].val, cur) < 1) {
+		if (qs_cmp_(params[tail].val, cur) < 1) {
 			params[++tail].val = cur;
 			last = tail;
 			continue;
@@ -208,7 +208,7 @@ qs_sort(struct ws *ws, const char *url, const char *qs)
 		params[tail] = params[i];
 
 		prev = i - 1;
-		while (i > head && qs_cmp(params[prev].val, cur) > -1)
+		while (i > head && qs_cmp_(params[prev].val, cur) > -1)
 			params[i--] = params[prev--];
 
 		params[i].val = cur;
