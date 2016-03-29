@@ -268,9 +268,10 @@ qs_match_list(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 
 	VSTAILQ_FOREACH(n, names, list)
 		if (strlen(n->name) == len && !strncmp(s, n->name, len))
-			return (!keep);
+			return (1);
 
-	return (keep);
+	(void)keep;
+	return (0);
 }
 
 static int __match_proto__(qs_match_f)
@@ -281,7 +282,8 @@ qs_match_name(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 
-	return (!strncmp(s, qsf->str, len) ^ keep);
+	(void)keep;
+	return (strlen(qsf->str) == len && !strncmp(s, qsf->str, len));
 }
 
 static int __match_proto__(qs_match_f)
@@ -312,7 +314,7 @@ qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 
 	match = VRT_re_match(ctx, p, qsf->regex);
 	free(p);
-	return (match ^ keep);
+	return (match);
 }
 
 static int __match_proto__(qs_match_f)
@@ -335,9 +337,9 @@ qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 
 	switch (match) {
 	case FNM_NOMATCH:
-		return (keep);
+		return (0);
 	case 0:
-		return (!keep);
+		return (1);
 	}
 
 	/* NB: If the fnmatch failed because of a wrong pattern, the error is
@@ -395,11 +397,16 @@ qs_apply_(VRT_CTX, const char *url, const char *qs, const struct qs_filter *qsf,
 				equal_pos = cursor;
 
 		name_len = (equal_pos ? equal_pos : cursor) - param_pos;
-		match = name_len == 0;
-		if (!match && qsf->match != NULL)
-			match = qsf->match(ctx, param_pos, name_len, qsf, keep);
 
-		if (!match) {
+		if (name_len == 0)
+			match = 0;
+		else if (qsf->match == NULL)
+			match = 1;
+		else
+			match = !keep ^ qsf->match(ctx, param_pos, name_len,
+			    qsf, keep);
+
+		if (match) {
 			qs_append(&begin, end, param_pos, cursor - param_pos);
 			if (*cursor == '&') {
 				*begin = '&';
