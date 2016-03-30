@@ -126,21 +126,6 @@ ac_default_prefix=$LIBVARNISHAPI_PREFIX
 
 AC_SUBST([TEST_PATH], [$LIBVARNISHAPI_SBINDIR:$LIBVARNISHAPI_BINDIR:$PATH])
 
-# Conditional logging
-AC_ARG_ENABLE(
-	[logging],
-	[AS_HELP_STRING(
-		[--disable-logging],
-		[Disable VCL calls and return values logging. @<:@enabled by default@:>@]
-	)],
-	[],
-	[enable_logging=yes]
-)
-
-if test "x$enable_logging" != "xno"; then
-	AC_SUBST([DEFINE_LOGGING], [-DQS_ENABLE_LOGGING])
-fi
-
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
