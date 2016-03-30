@@ -56,13 +56,6 @@ struct query_param {
 	size_t		len;
 };
 
-VSTAILQ_HEAD(qs_list, qs_name);
-
-struct qs_name {
-	VSTAILQ_ENTRY(qs_name)	list;
-	char			*name;
-};
-
 struct qs_filter;
 
 typedef int qs_match_f(VRT_CTX, const char *, size_t, const struct qs_filter *,
@@ -74,8 +67,6 @@ struct qs_filter {
 	unsigned		magic;
 #define QS_FILTER_MAGIC		0xfc750864
 	union {
-		struct qs_list	names;
-		void		*regex;
 		void		*ptr;
 		const char	*str;
 	};

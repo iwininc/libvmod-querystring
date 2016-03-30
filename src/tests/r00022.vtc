@@ -7,9 +7,13 @@ server s1 {
 varnish v1 -vcl+backend {
 	import ${vmod_querystring};
 
+	sub vcl_init {
+		new qf = querystring.filter(sort = true);
+		qf.add_regex("(utm_.*)|(img.*)|(gclid.*)");
+	}
+
 	sub vcl_recv {
-		set req.url = querystring.regfilter(req.url, "(utm_.*)|(img.*)|(gclid.*)");
-		set req.url = querystring.sort(req.url);
+		set req.url = qf.apply(req.url);
 	}
 } -start
 
