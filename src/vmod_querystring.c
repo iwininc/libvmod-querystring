@@ -235,7 +235,7 @@ vmod_remove(VRT_CTX, VCL_STRING url)
 int
 qs_cmp(const void *v1, const void *v2)
 {
-	const struct query_param *p1, *p2;
+	const struct qs_param *p1, *p2;
 	size_t len;
 	int cmp;
 
@@ -280,7 +280,7 @@ static const char *
 qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
     const struct vmod_querystring_filter *obj)
 {
-	struct query_param *params, *p;
+	struct qs_param *params, *p;
 	const char *nm, *eq;
 	char *res, *cur, sep;
 	size_t len, nm_len, cnt;

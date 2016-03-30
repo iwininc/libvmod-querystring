@@ -30,7 +30,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-struct query_param {
+struct qs_param {
 	const char	*val;
 	size_t		len;
 };
