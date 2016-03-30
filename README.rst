@@ -16,7 +16,7 @@ want for your web site or application.
 
 A query-string is just a character string starting after a question mark in a
 URL. But in a web context, it is usually a structured key/values store encoded
-with the MIME type ``application/x-www-form-urlencoded``. This module deals
+with the ``application/x-www-form-urlencoded`` media type. This module deals
 with this kind of query-strings.
 
 Examples
@@ -44,7 +44,7 @@ knowledge of the back-end application but it can usually be mitigated with
 a couple assumptions:
 
 - the application doesn't need query-strings
-- except for POST forms that are not cached
+- except for POST requests that are not cached
 - and for analytics/tracking purposes
 
 In this case it can be solved like this::
@@ -76,19 +76,29 @@ you may want to remove Google Analytics parameters from requests because:
 
 - they could create cache duplicates for every campaigns
 - the application does not need them, only marketing folks
+- the user's browser makes AJAX calls to GA regardless
 - they can be delivered to marketing via ``varnishncsa``
 
-It can be solved like this::
+It could be solved like this::
 
+    import std;
     import querystring;
 
+    sub vcl_init {
+        new ga = querystring.filter();
+        ga.add_regex("^utm_.*");
+    }
+
     sub vcl_recv {
-        set req.url = querystring.regfilter(req.url, "utm_.*");
+        std.log("ga:" + ga.extract(req.url, mode = keep));
+        set req.url = ga.apply(req.url);
     }
 
 This is enough to remove all Analytics parameters you may use (``utm_source``,
 ``utm_medium``, ``utm_campaign`` etc) and keep the rest of the query-string
-unless there are no other parameters in which case it's simply removed.
+unless there are no other parameters in which case it's simply removed. The
+log statement allows you to get those analytics parameters (and only them) in
+``varnishncsa`` using the format string ``%{VCL_Log:ga}x``.
 
 All functions are documented in the manual page ``vmod_querystring(3)``.
 
