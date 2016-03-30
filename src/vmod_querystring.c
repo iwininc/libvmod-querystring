@@ -193,21 +193,6 @@ qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 	return (keep);
 }
 
-static void *
-qs_re_init(VRT_CTX, const char *regex)
-{
-	void *re;
-	const char *error;
-	int error_offset;
-
-	(void)ctx;
-
-	re = VRE_compile(regex, 0, &error, &error_offset);
-	VSL(SLT_Error, 0, "Regex error (%s): '%s' pos %d", error,
-	    regex, error_offset);
-	return (re);
-}
-
 int
 qs_cmp(const void *v1, const void *v2)
 {
@@ -451,12 +436,13 @@ vmod_filter_add_glob(VRT_CTX, struct vmod_querystring_filter *obj,
 	VTAILQ_INSERT_TAIL(&obj->filters, qsf, list);
 }
 
-
 VCL_VOID
 vmod_filter_add_regex(VRT_CTX, struct vmod_querystring_filter *obj,
     VCL_STRING regex)
 {
 	struct qs_filter *qsf;
+	const char *error;
+	int error_offset;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -466,11 +452,13 @@ vmod_filter_add_regex(VRT_CTX, struct vmod_querystring_filter *obj,
 	ALLOC_OBJ(qsf, QS_FILTER_MAGIC);
 	AN(qsf);
 
-	qsf->ptr = qs_re_init(ctx, regex);
+	qsf->ptr = VRE_compile(regex, 0, &error, &error_offset);
 	if (qsf->ptr == NULL) {
 		AN(ctx->msg);
-		VSB_printf(ctx->msg, "vmod-querystring: invalid regex: %s\n",
-		    regex);
+		FREE_OBJ(qsf);
+		VSB_printf(ctx->msg,
+		    "vmod-querystring: regex error (%s): '%s' pos %d\n",
+		    error, regex, error_offset);
 		VRT_handling(ctx, VCL_RET_FAIL);
 		return;
 	}
