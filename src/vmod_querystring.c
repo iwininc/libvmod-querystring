@@ -45,21 +45,55 @@
 #include <cache/cache.h>
 
 #include "vcc_if.h"
-#include "vmod_querystring.h"
 
 /* End Of Query Parameter */
 #define EOQP(c) (c == '\0' || c == '&')
 
 /***********************************************************************
- * Global data structures.
+ * Type definitions
  */
 
-struct vmod_querystring_filter qs_clean_filter = {
+struct qs_param {
+	const char	*val;
+	size_t		len;
+};
+
+struct qs_filter;
+
+typedef int qs_match_f(VRT_CTX, const char *, size_t, const struct qs_filter *,
+    unsigned);
+
+typedef void qs_free_f(void *);
+
+struct qs_filter {
+	unsigned		magic;
+#define QS_FILTER_MAGIC		0xfc750864
+	union {
+		void		*ptr;
+		const char	*str;
+	};
+	qs_match_f		*match;
+	qs_free_f		*free;
+	VTAILQ_ENTRY(qs_filter)	list;
+};
+
+struct vmod_querystring_filter {
+	unsigned			magic;
+#define VMOD_QUERYSTRING_FILTER_MAGIC	0xbe8ecdb4
+	VTAILQ_HEAD(, qs_filter)	filters;
+	unsigned			sort;
+};
+
+/***********************************************************************
+ * Static data structures
+ */
+
+static struct vmod_querystring_filter qs_clean_filter = {
 	.magic = VMOD_QUERYSTRING_FILTER_MAGIC,
 	.sort = 0,
 };
 
-struct vmod_querystring_filter qs_sort_filter = {
+static struct vmod_querystring_filter qs_sort_filter = {
 	.magic = VMOD_QUERYSTRING_FILTER_MAGIC,
 	.sort = 1,
 };

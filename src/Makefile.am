@@ -51,8 +51,7 @@ libvmod_querystring_la_LDFLAGS = \
 	-shared
 
 libvmod_querystring_la_SOURCES = \
-	vmod_querystring.c \
-	vmod_querystring.h
+	vmod_querystring.c
 
 nodist_libvmod_querystring_la_SOURCES = \
 	$(VCC_FILES)
