@@ -65,9 +65,7 @@ struct vmod_querystring_filter qs_sort_filter = {
 };
 
 /***********************************************************************
- * The static functions below contain the actual implementation of the
- * module with the least possible coupling to Varnish. This helps keep a
- * single code base for all Varnish versions.
+ * VMOD implementation
  */
 
 static const char *
@@ -210,28 +208,6 @@ qs_re_init(VRT_CTX, const char *regex)
 	return (re);
 }
 
-/***********************************************************************
- * Below are the functions that will actually be linked by Varnish.
- */
-
-VCL_STRING
-vmod_remove(VRT_CTX, VCL_STRING url)
-{
-	const char *res, *qs;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
-
-	res = NULL;
-	if (qs_empty(ctx->ws, url, &res))
-		return (res);
-
-	qs = res;
-	return (qs_truncate(ctx->ws, url, qs));
-}
-
-/* -------------------------------------------------------------------- */
-
 int
 qs_cmp(const void *v1, const void *v2)
 {
@@ -371,6 +347,26 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 	WS_Release(ctx->ws, 0);
 
 	return (res);
+}
+
+/***********************************************************************
+ * VMOD interfaces
+ */
+
+VCL_STRING
+vmod_remove(VRT_CTX, VCL_STRING url)
+{
+	const char *res, *qs;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+
+	res = NULL;
+	if (qs_empty(ctx->ws, url, &res))
+		return (res);
+
+	qs = res;
+	return (qs_truncate(ctx->ws, url, qs));
 }
 
 VCL_VOID
