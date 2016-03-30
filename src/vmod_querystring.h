@@ -30,10 +30,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-typedef const struct vrt_ctx re_ctx;
-
-/* ------------------------------------------------------------------- */
-
 struct query_param {
 	const char	*val;
 	size_t		len;
