@@ -119,21 +119,6 @@ qs_empty(struct ws *ws, const char *url, const char **res)
 	return (0);
 }
 
-static const char *
-qs_remove(struct ws *ws, const char *url)
-{
-	const char *res, *qs;
-
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-
-	res = NULL;
-	if (qs_empty(ws, url, &res))
-		return (res);
-
-	qs = res;
-	return (qs_truncate(ws, url, qs));
-}
-
 static void
 qs_append(char **begin, const char *end, const char *string, size_t len)
 {
@@ -376,18 +361,20 @@ qs_build_list(struct ws *ws, struct qs_list *names, const char *p, va_list ap)
  * Below are the functions that will actually be linked by Varnish.
  */
 
-const char *
-vmod_remove(VRT_CTX, const char *url)
+VCL_STRING
+vmod_remove(VRT_CTX, VCL_STRING url)
 {
-	const char *cleaned_url;
+	const char *res, *qs;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	QS_LOG_CALL(ctx, "\"%s\"", url);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 
-	cleaned_url = qs_remove(ctx->ws, url);
+	res = NULL;
+	if (qs_empty(ctx->ws, url, &res))
+		return (res);
 
-	QS_LOG_RETURN(ctx, cleaned_url);
-	return (cleaned_url);
+	qs = res;
+	return (qs_truncate(ctx->ws, url, qs));
 }
 
 const char *
