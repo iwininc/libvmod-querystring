@@ -504,7 +504,7 @@ vmod_filter_add_regex(VRT_CTX, struct vmod_querystring_filter *obj,
 
 VCL_STRING
 vmod_filter_apply(VRT_CTX, struct vmod_querystring_filter *obj,
-    VCL_STRING src, VCL_ENUM mode)
+    VCL_STRING url, VCL_ENUM mode)
 {
 	const char *res, *tmp, *qs;
 	unsigned keep;
@@ -514,7 +514,7 @@ vmod_filter_apply(VRT_CTX, struct vmod_querystring_filter *obj,
 	AN(mode);
 
 	tmp = NULL;
-	if (qs_empty(ctx->ws, src, &tmp))
+	if (qs_empty(ctx->ws, url, &tmp))
 		return (tmp);
 
 	qs = tmp;
@@ -525,13 +525,13 @@ vmod_filter_apply(VRT_CTX, struct vmod_querystring_filter *obj,
 	else if (strcmp(mode, "drop"))
 		WRONG("Unknown filtering mode");
 
-	res = qs_apply(ctx, src, qs, keep, obj);
+	res = qs_apply(ctx, url, qs, keep, obj);
 	return (res);
 }
 
 VCL_STRING
 vmod_filter_extract(VRT_CTX, struct vmod_querystring_filter *obj,
-    VCL_STRING src, VCL_ENUM mode)
+    VCL_STRING url, VCL_ENUM mode)
 {
 	const char *res, *qs;
 
@@ -539,10 +539,10 @@ vmod_filter_extract(VRT_CTX, struct vmod_querystring_filter *obj,
 	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
 	AN(mode);
 
-	if (src == NULL)
+	if (url == NULL)
 		return (NULL);
 
-	qs = strchr(src, '?');
+	qs = strchr(url, '?');
 	if (qs == NULL || qs[1] == '\0')
 		return (NULL);
 
