@@ -60,8 +60,8 @@ struct qs_param {
 
 struct qs_filter;
 
-typedef int qs_match_f(VRT_CTX, const char *, size_t, const struct qs_filter *,
-    unsigned);
+typedef int qs_match_f(VRT_CTX, const struct qs_filter *, const char *,
+    size_t, unsigned);
 
 typedef void qs_free_f(void *);
 
@@ -152,7 +152,7 @@ qs_empty(struct ws *ws, const char *url, const char **res)
 }
 
 static int __match_proto__(qs_match_f)
-qs_match_name(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
+qs_match_name(VRT_CTX, const struct qs_filter *qsf, const char *s, size_t len,
     unsigned keep)
 {
 
@@ -164,8 +164,8 @@ qs_match_name(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 }
 
 static int __match_proto__(qs_match_f)
-qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
-    unsigned keep)
+qs_match_regex(VRT_CTX, const struct qs_filter *qsf, const char *s,
+    size_t len, unsigned keep)
 {
 	int match;
 	char *p;
@@ -195,7 +195,7 @@ qs_match_regex(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
 }
 
 static int __match_proto__(qs_match_f)
-qs_match_glob(VRT_CTX, const char *s, size_t len, const struct qs_filter *qsf,
+qs_match_glob(VRT_CTX, const struct qs_filter *qsf, const char *s, size_t len,
     unsigned keep)
 {
 	int match;
@@ -264,7 +264,7 @@ qs_match(VRT_CTX, const struct vmod_querystring_filter *obj,
 
 	VTAILQ_FOREACH(qsf, &obj->filters, list) {
 		CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
-		if (qsf->match(ctx, name, len, qsf, keep))
+		if (qsf->match(ctx, qsf, name, len, keep))
 			return (keep);
 	}
 
