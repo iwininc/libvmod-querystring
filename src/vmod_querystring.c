@@ -33,15 +33,10 @@
 #include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 
-#include <vdef.h>
 #include <vcl.h>
 #include <vrt.h>
-#include <vre.h>
-#include <vsb.h>
-#include <vqueue.h>
 #include <cache/cache.h>
 
 #include "vcc_if.h"
