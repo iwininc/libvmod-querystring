@@ -16,8 +16,6 @@ Darwin)
 	LIBTOOLIZE=libtoolize
 esac
 
-mkdir -p m4
-
 aclocal -I m4
 $LIBTOOLIZE --copy --force
 autoheader

@@ -35,3 +35,14 @@ DISTCHECK_CONFIGURE_FLAGS = VMOD_DIR='$${libdir}/varnish/vmods'
 EXTRA_DIST = README.rst LICENSE vmod-querystring.spec
 
 dist_doc_DATA = LICENSE CONTRIBUTORS CHANGELOG
+
+# lcov support
+CODE_COVERAGE_OUTPUT_DIRECTORY = lcov
+CODE_COVERAGE_IGNORE_PATTERN = "/usr/*"
+CODE_COVERAGE_GENHTML_OPTIONS = --prefix $(abs_top_srcdir)
+
+@CODE_COVERAGE_RULES@
+
+if CODE_COVERAGE_ENABLED
+lcov: check-code-coverage
+endif
