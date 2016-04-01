@@ -265,9 +265,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 	params = (void *)WS_Snapshot(ctx->ws);
 	ws_len = (ssize_t)WS_Reserve(ctx->ws, 0);
 
-	p = (void *)PRNDUP(params);
-	ws_len -= pdiff(params, p);
-	params = p;
+	p = params;
 
 	len = qs - url;
 	(void)snprintf(res, len + 1, "%s", url);
