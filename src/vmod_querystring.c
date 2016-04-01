@@ -239,13 +239,35 @@ qs_match(VRT_CTX, const struct vmod_querystring_filter *obj,
 	return (!keep);
 }
 
+static char *
+qs_append(char *cur, size_t cnt, struct qs_param *head, struct qs_param *tail)
+{
+	char sep;
+
+	sep = '?';
+	while (cnt > 0) {
+		assert(head < tail);
+		AZ(*cur);
+		*cur = sep;
+		cur++;
+		(void)snprintf(cur, head->len + 1, "%s", head->val);
+		sep = '&';
+		cur += head->len;
+		head++;
+		cnt--;
+	}
+
+	assert(head == tail);
+	return cur;
+}
+
 static const char *
 qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
     const struct vmod_querystring_filter *obj)
 {
 	struct qs_param *params, *p;
 	const char *nm, *eq;
-	char *res, *cur, sep, *tmp;
+	char *res, *cur, *tmp;
 	size_t len, nm_len, cnt;
 	ssize_t ws_len;
 
@@ -323,20 +345,9 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 	if (obj->sort)
 		qsort(params, cnt, sizeof *params, qs_cmp);
 
-	sep = '?';
-	while (cnt > 0) {
-		assert(params < p);
-		AZ(*cur);
-		*cur = sep;
-		cur++;
-		(void)snprintf(cur, params->len + 1, "%s", params->val);
-		sep = '&';
-		cur += params->len;
-		params++;
-		cnt--;
-	}
+	if (cnt > 0)
+		cur = qs_append(cur, cnt, params, p);
 
-	assert(params == p);
 	AZ(*cur);
 
 	cur = (char *)PRNDUP(cur + 1);
