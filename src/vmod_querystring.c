@@ -340,7 +340,10 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 
 	assert(params == p);
 	AZ(*cur);
+
+	cur = (char *)PRNDUP(cur + 1);
 	WS_Release(ctx->ws, 0);
+	WS_Reset(ctx->ws, cur);
 
 	return (res);
 }
