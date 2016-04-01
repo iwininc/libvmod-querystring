@@ -64,4 +64,12 @@ client c1 {
 	txreq -url "/?b&&a"
 	rxresp
 	expect resp.http.Sorted-URL == "/?a&b"
+
+	txreq -url "/?a&b&a"
+	rxresp
+	expect resp.http.Sorted-URL == "/?a&a&b"
+
+	txreq -url "/?b&a&ba"
+	rxresp
+	expect resp.http.Sorted-URL == "/?a&b&ba"
 } -run

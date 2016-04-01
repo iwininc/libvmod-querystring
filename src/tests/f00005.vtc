@@ -28,7 +28,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-varnishtest "Filter parameters by name"
+varnishtest "Filter empty or NULL strings"
 
 server s1 "" -start
 
@@ -36,10 +36,7 @@ varnish v1 -vcl+backend {
 	import ${vmod_querystring};
 
 	sub vcl_init {
-		new ga = querystring.filter();
-		ga.add_name("utm_source");
-		ga.add_name("utm_medium");
-		ga.add_name("utm_campaign");
+		new noop = querystring.filter();
 	}
 
 	sub vcl_recv {
@@ -47,35 +44,28 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_synth {
-		set resp.http.Filtered-URL = ga.apply(req.url);
-		set resp.http.Extracted-QS = ga.extract(req.url, mode = keep);
+		set resp.http.Filtered-URL = noop.apply(req.http.url);
+		set resp.http.Extracted-URL = noop.extract(req.http.url);
+		set resp.http.Removed-URL = querystring.remove(req.http.url);
 	}
 } -start
 
 client c1 {
-	txreq -url "/?utm_source=git&utm_campaign=name&utm_medium=vtc"
+	txreq -hdr "url:?"
 	rxresp
-	expect resp.http.Filtered-URL == "/"
-	expect resp.http.Extracted-QS == \
-	    "utm_source=git&utm_campaign=name&utm_medium=vtc"
+	expect resp.http.Filtered-URL == ""
+	expect resp.http.Extracted-URL == ""
+	expect resp.http.Removed-URL == ""
 
-	txreq -url "/?utm_source=git&wrong=name&utm_medium=vtc"
+	txreq -hdr "url:"
 	rxresp
-	expect resp.http.Filtered-URL == "/?wrong=name"
-	expect resp.http.Extracted-QS == "utm_source=git&utm_medium=vtc"
+	expect resp.http.Filtered-URL == ""
+	expect resp.http.Extracted-URL == ""
+	expect resp.http.Removed-URL == ""
 
-	txreq -url "/?utm_source=git&wrong=name&easy=vtc"
+	txreq
 	rxresp
-	expect resp.http.Filtered-URL == "/?wrong=name&easy=vtc"
-	expect resp.http.Extracted-QS == "utm_source=git"
-
-	txreq -url "/?&&utm_source=git&&broken=fields&&&&easy=vtc&"
-	rxresp
-	expect resp.http.Filtered-URL == "/?broken=fields&easy=vtc"
-	expect resp.http.Extracted-QS == "utm_source=git"
-
-	txreq -url "/?unrelated=params&no=analytics"
-	rxresp
-	expect resp.http.Filtered-URL == "/?unrelated=params&no=analytics"
-	expect resp.http.Extracted-QS == ""
+	expect resp.http.Filtered-URL == ""
+	expect resp.http.Extracted-URL == ""
+	expect resp.http.Removed-URL == ""
 } -run
