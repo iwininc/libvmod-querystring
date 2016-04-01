@@ -269,7 +269,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 	struct qs_param *params, *p;
 	const char *nm, *eq;
 	char *res, *cur, *tmp;
-	size_t len, nm_len, cnt;
+	size_t len, tmp_len, cnt;
 	ssize_t ws_len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -316,12 +316,12 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 			qs++;
 		}
 
-		nm_len = (eq != NULL ? eq : qs) - nm;
+		tmp_len = (eq != NULL ? eq : qs) - nm;
 
-		(void)snprintf(tmp, nm_len + 1, "%s", nm);
+		(void)snprintf(tmp, tmp_len + 1, "%s", nm);
 
-		if (qs_match(ctx, obj, tmp, nm_len, keep)) {
-			AN(nm_len);
+		if (qs_match(ctx, obj, tmp, tmp_len, keep)) {
+			AN(tmp_len);
 			if (ws_len < (ssize_t)sizeof *p) {
 				ws_len = -1;
 				break;
