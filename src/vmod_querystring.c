@@ -154,8 +154,9 @@ qs_match_name(VRT_CTX, const struct qs_filter *qsf, const char *s, size_t len,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 
+	(void)len;
 	(void)keep;
-	return (strlen(qsf->str) == len && !strncmp(s, qsf->str, len));
+	return (!strcmp(s, qsf->str));
 }
 
 static int __match_proto__(qs_match_f)
@@ -163,29 +164,13 @@ qs_match_regex(VRT_CTX, const struct qs_filter *qsf, const char *s,
     size_t len, unsigned keep)
 {
 	int match;
-	char *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 
-	/* NB: It is not possible to allocate from the workspace because it
-	 * will be reserved. Allocating from the stack is not recommended
-	 * because of the way Varnish uses the stack, and because we can't
-	 * predict the size of a URL. The stack is also a concern because of
-	 * the regex match right after the allocation.
-	 *
-	 * According to PHK in this case we're probably better off using plain
-	 * malloc but it may not be a good idea to crash the child process if
-	 * the allocation failed so instead we make the assumption that we
-	 * couldn't allocate a parameter's LARGE name and deem it malicious,
-	 * so we make sure not to keep it.
-	 */
-	p = strndup(s, len);
-	if (p == NULL)
-		return (!keep);
-
-	match = VRT_re_match(ctx, p, qsf->ptr);
-	free(p);
+	(void)len;
+	(void)keep;
+	match = VRT_re_match(ctx, s, qsf->ptr);
 	return (match);
 }
 
@@ -194,18 +179,12 @@ qs_match_glob(VRT_CTX, const struct qs_filter *qsf, const char *s, size_t len,
     unsigned keep)
 {
 	int match;
-	char *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
 
-	/* See qs_match_regex for the explanation */
-	p = strndup(s, len);
-	if (p == NULL)
-		return (!keep);
-
-	match = fnmatch(qsf->str, p, 0);
-	free(p);
+	(void)len;
+	match = fnmatch(qsf->str, s, 0);
 
 	switch (match) {
 	case FNM_NOMATCH:
@@ -272,7 +251,7 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 {
 	struct qs_param *params, *p;
 	const char *nm, *eq;
-	char *res, *cur, sep;
+	char *res, *cur, sep, *tmp;
 	size_t len, nm_len, cnt;
 	ssize_t ws_len;
 
@@ -305,6 +284,13 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 	qs++;
 	AN(*qs);
 
+	/* NB: during the matching phase we can use the preallocated space for
+	 * the result's query-string in order to copy the current parameter in
+	 * the loop. This saves an allocation in matchers that require a null-
+	 * terminated string.
+	 */
+	tmp = cur + 1;
+
 	while (*qs != '\0') {
 		nm = qs;
 		eq = NULL;
@@ -317,7 +303,9 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 
 		nm_len = (eq != NULL ? eq : qs) - nm;
 
-		if (qs_match(ctx, obj, nm, nm_len, keep)) {
+		(void)snprintf(tmp, nm_len + 1, "%s", nm);
+
+		if (qs_match(ctx, obj, tmp, nm_len, keep)) {
 			AN(nm_len);
 			if (ws_len < (ssize_t)sizeof *p) {
 				ws_len = -1;
