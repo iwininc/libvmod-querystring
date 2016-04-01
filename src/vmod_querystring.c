@@ -486,7 +486,7 @@ VCL_STRING
 vmod_filter_apply(VRT_CTX, struct vmod_querystring_filter *obj,
     VCL_STRING url, VCL_ENUM mode)
 {
-	const char *res, *tmp, *qs;
+	const char *tmp, *qs;
 	unsigned keep;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -505,8 +505,7 @@ vmod_filter_apply(VRT_CTX, struct vmod_querystring_filter *obj,
 	else if (strcmp(mode, "drop"))
 		WRONG("Unknown filtering mode");
 
-	res = qs_apply(ctx, url, qs, keep, obj);
-	return (res);
+	return (qs_apply(ctx, url, qs, keep, obj));
 }
 
 VCL_STRING
