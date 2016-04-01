@@ -181,12 +181,11 @@ qs_match_glob(VRT_CTX, const struct qs_filter *qsf, const char *s,
 
 	match = fnmatch(qsf->str, s, 0);
 
-	switch (match) {
-	case FNM_NOMATCH:
-		return (0);
-	case 0:
+	if (match == 0)
 		return (1);
-	}
+
+	if (match == FNM_NOMATCH)
+		return (0);
 
 	/* NB: If the fnmatch failed because of a wrong pattern, the error is
 	 * logged but the query-string is kept intact.
