@@ -349,8 +349,9 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 		cur = qs_append(cur, cnt, params, p);
 
 	AZ(*cur);
-
 	cur = (char *)PRNDUP(cur + 1);
+	assert((void *)cur <= (void *)params);
+
 	WS_Release(ctx->ws, 0);
 	WS_Reset(ctx->ws, cur);
 
