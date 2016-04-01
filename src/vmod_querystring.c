@@ -191,7 +191,7 @@ qs_match_glob(VRT_CTX, const struct qs_filter *qsf, const char *s,
 	/* NB: If the fnmatch failed because of a wrong pattern, the error is
 	 * logged but the query-string is kept intact.
 	 */
-	VSLb(ctx->vsl, SLT_Error, "querystring.globfilter: wrong pattern `%s'",
+	VSLb(ctx->vsl, SLT_Error, "querystring: failed to match glob `%s'",
 	    qsf->str);
 	return (keep);
 }
