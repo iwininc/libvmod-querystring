@@ -71,6 +71,26 @@ Example
             return (lookup);
         }
 
+It is also possible for a filter to either match parameters by name, or by
+themselves. By default the criteria are tested against the name only, leaving
+alone the contents starting at the equal sign when there's one. For that the
+constructor takes another optional ``match`` parameter that can take either
+``name`` (default) or ``param``.
+
+Example
+    ::
+
+        sub vcl_init {
+            new fr = querystring.filter(match = param);
+            fr.add_regex("^lang=fr(-..)?$");
+        }
+
+        sub vcl_recv {
+            if (fr.extract(req.url)) {
+                set req.backend_hint = www_fr;
+            }
+        }
+
 $Method VOID .add_string(STRING)
 
 Description
