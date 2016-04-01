@@ -77,6 +77,7 @@ struct vmod_querystring_filter {
 #define VMOD_QUERYSTRING_FILTER_MAGIC	0xbe8ecdb4
 	VTAILQ_HEAD(, qs_filter)	filters;
 	unsigned			sort;
+	unsigned			match_name;
 };
 
 /***********************************************************************
@@ -316,7 +317,12 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 			qs++;
 		}
 
-		tmp_len = (eq != NULL ? eq : qs) - nm;
+		if (eq == nm)
+			tmp_len = 0;
+		else if (obj->match_name && eq != NULL)
+			tmp_len = eq - nm;
+		else
+			tmp_len = qs - nm;
 
 		(void)snprintf(tmp, tmp_len + 1, "%s", nm);
 
@@ -381,7 +387,7 @@ vmod_remove(VRT_CTX, VCL_STRING url)
 
 VCL_VOID
 vmod_filter__init(VRT_CTX, struct vmod_querystring_filter **objp,
-    const char *vcl_name, VCL_BOOL sort)
+    const char *vcl_name, VCL_BOOL sort, VCL_STRING match)
 {
 	struct vmod_querystring_filter *obj;
 
@@ -396,6 +402,12 @@ vmod_filter__init(VRT_CTX, struct vmod_querystring_filter **objp,
 
 	VTAILQ_INIT(&obj->filters);
 	obj->sort = sort;
+
+	if (!strcmp(match, "name"))
+		obj->match_name = 1;
+	else if (strcmp(match, "param"))
+		WRONG("Unknown matching type");
+
 	*objp = obj;
 }
 

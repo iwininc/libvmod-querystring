@@ -42,7 +42,7 @@ sort the parameters inside the query-string. It will make the hashing more
 deterministic for Varnish, possibly improving your hit rate even more.
 
 
-$Object filter(BOOL sort = 0)
+$Object filter(BOOL sort = 0, ENUM {name, param} match = "name")
 
 A filter is first set up in *vcl_init* and then used during transactions. The
 setup includes the creation of the filter to which you add criteria. During
