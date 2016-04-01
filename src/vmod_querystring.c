@@ -100,24 +100,25 @@ static struct vmod_querystring_filter qs_sort_filter = {
 static const char *
 qs_truncate(struct ws *ws, const char *url, const char *qs)
 {
-	size_t qs_pos;
-	char *trunc;
+	char *res;
+	size_t len;
 
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 	AN(url);
 	AN(qs);
 	assert(url <= qs);
 
-	qs_pos = qs - url;
-	trunc = WS_Alloc(ws, qs_pos + 1);
+	len = qs - url;
+	if (len == 0)
+		return "";
 
-	if (trunc == NULL)
+	res = WS_Copy(ws, url, len + 1);
+
+	if (res == NULL)
 		return (url);
 
-	(void)memcpy(trunc, url, qs_pos);
-	trunc[qs_pos] = '\0';
-
-	return (trunc);
+	res[len] = '\0';
+	return (res);
 }
 
 static int
