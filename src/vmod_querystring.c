@@ -149,7 +149,7 @@ qs_empty(struct ws *ws, const char *url, const char **res)
 }
 
 static int __match_proto__(qs_match_f)
-qs_match_name(VRT_CTX, const struct qs_filter *qsf, const char *s,
+qs_match_string(VRT_CTX, const struct qs_filter *qsf, const char *s,
     unsigned keep)
 {
 
@@ -219,7 +219,7 @@ qs_cmp(const void *v1, const void *v2)
 
 static unsigned
 qs_match(VRT_CTX, const struct vmod_querystring_filter *obj,
-    const char *name, size_t len, unsigned keep)
+    const char *param, size_t len, unsigned keep)
 {
 	struct qs_filter *qsf;
 
@@ -234,7 +234,7 @@ qs_match(VRT_CTX, const struct vmod_querystring_filter *obj,
 
 	VTAILQ_FOREACH(qsf, &obj->filters, list) {
 		CHECK_OBJ_NOTNULL(qsf, QS_FILTER_MAGIC);
-		if (qsf->match(ctx, qsf, name, keep))
+		if (qsf->match(ctx, qsf, param, keep))
 			return (keep);
 	}
 
@@ -436,21 +436,21 @@ vmod_filter__fini(struct vmod_querystring_filter **objp)
 }
 
 VCL_VOID
-vmod_filter_add_name(VRT_CTX, struct vmod_querystring_filter *obj,
-    VCL_STRING name)
+vmod_filter_add_string(VRT_CTX, struct vmod_querystring_filter *obj,
+    VCL_STRING string)
 {
 	struct qs_filter *qsf;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(obj, VMOD_QUERYSTRING_FILTER_MAGIC);
-	AN(name);
+	AN(string);
 
 	ALLOC_OBJ(qsf, QS_FILTER_MAGIC);
 	AN(qsf);
 
-	qsf->str = name;
-	qsf->match = qs_match_name;
+	qsf->str = string;
+	qsf->match = qs_match_string;
 	VTAILQ_INSERT_TAIL(&obj->filters, qsf, list);
 }
 

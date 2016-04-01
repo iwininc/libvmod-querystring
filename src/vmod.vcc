@@ -60,7 +60,7 @@ Example
 
         sub vcl_init {
             new qf = querystring.filter(sort = true);
-            qf.add_name("_"); # a timestamp used to bypass caches
+            qf.add_string("_"); # a timestamp used to bypass caches
             qf.add_glob("utm_*"); # google analytics parameters
             qf.add_regex("sess[0-9]+"); # anti-CSRF token
         }
@@ -71,7 +71,7 @@ Example
             return (lookup);
         }
 
-$Method VOID .add_name(STRING)
+$Method VOID .add_string(STRING)
 
 Description
     Use the string parameter as an exact-match criterion.

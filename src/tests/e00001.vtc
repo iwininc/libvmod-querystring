@@ -37,9 +37,9 @@ varnish v1 -vcl+backend {
 
 	sub vcl_init {
 		new ga = querystring.filter();
-		ga.add_name("utm_source");
-		ga.add_name("utm_medium");
-		ga.add_name("utm_campaign");
+		ga.add_string("utm_source");
+		ga.add_string("utm_medium");
+		ga.add_string("utm_campaign");
 	}
 
 	sub vcl_recv {

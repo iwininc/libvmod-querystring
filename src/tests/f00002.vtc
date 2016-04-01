@@ -37,7 +37,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_init {
 		new f = querystring.filter();
-		f.add_name("_");
+		f.add_string("_");
 		f.add_glob("utm_*");
 		f.add_regex("^sessid_[0-9]+");
 	}
