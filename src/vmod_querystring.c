@@ -44,6 +44,12 @@
 /* End Of Query Parameter */
 #define EOQP(c) (c == '\0' || c == '&')
 
+#define WS_ClearOverflow(ws, tmp)	\
+	do {				\
+		tmp = WS_Snapshot(ws);	\
+		WS_Reset(ws, tmp);	\
+	} while (0)
+
 /***********************************************************************
  * Type definitions
  */
@@ -114,9 +120,10 @@ qs_truncate(struct ws *ws, const char *url, const char *qs)
 		return "";
 
 	res = WS_Copy(ws, url, len + 1);
-
-	if (res == NULL)
+	if (res == NULL) {
+		WS_ClearOverflow(ws, res);
 		return (url);
+	}
 
 	res[len] = '\0';
 	return (res);
@@ -283,8 +290,10 @@ qs_apply(VRT_CTX, const char *url, const char *qs, unsigned keep,
 
 	len = strlen(url);
 	res = WS_Alloc(ctx->ws, len + 1);
-	if (res == NULL)
+	if (res == NULL) {
+		WS_ClearOverflow(ctx->ws, res);
 		return (url);
+	}
 
 	params = (void *)WS_Snapshot(ctx->ws);
 	ws_len = (ssize_t)WS_Reserve(ctx->ws, 0);
