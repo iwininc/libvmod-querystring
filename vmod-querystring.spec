@@ -36,7 +36,6 @@ make %{?_smp_mflags}
 
 %install
 %make_install
-rm %{buildroot}%{vmoddir}/libvmod_%{vmod}.la
 
 
 %check
@@ -50,6 +49,9 @@ make %{?_smp_mflags} check
 
 
 %changelog
+* Sat Apr 02 2016 Dridi Boukelmoune <dridi.boukelmoune@gmail.com> - 0.5-1
+- Stop removing the libtool archive
+
 * Thu Feb 11 2016 Dridi Boukelmoune <dridi.boukelmoune@gmail.com> - 0.4-1
 - Bump version
 - Drop Varnish 3 source code requirement

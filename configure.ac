@@ -30,37 +30,20 @@
 
 AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2012-2016 Dridi Boukelmoune <dridi.boukelmoune@gmail.com>])
-AC_INIT(
-	[libvmod-querystring],
+AC_INIT([libvmod-querystring],
 	[0.4],
 	[https://github.com/dridi/libvmod-querystring/issues])
 
 AC_CONFIG_MACRO_DIR([m4])
-m4_ifndef(
-	  [VARNISH_VMOD_INCLUDES],
-	  AC_MSG_ERROR([Need varnish.m4 -- see README.rst]))
 
-AC_CONFIG_SRCDIR(src/vmod.vcc)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_SRCDIR(src)
+AC_CONFIG_HEADER(config.h)
 
 AC_CANONICAL_SYSTEM
-AC_LANG(C)
 
 AM_INIT_AUTOMAKE([foreign])
-
-AC_GNU_SOURCE
-AC_PROG_CC
-AC_PROG_CC_STDC
-AC_PROG_CPP
-if test "x$ac_cv_prog_cc_c99" = xno; then
-	AC_MSG_ERROR([Could not find a C99 compatible compiler])
-fi
-
-AM_PROG_AR
-AC_PROG_INSTALL
-AC_PROG_LIBTOOL
-AC_PROG_MAKE_SET
-AX_CODE_COVERAGE
+AM_SANITY_CHECK
+AM_SILENT_RULES([yes])
 
 # Check for rst utilities
 AC_ARG_WITH([rst2man],
@@ -78,54 +61,11 @@ fi
 VTC_TESTS="$(cd $srcdir/src && echo tests/*.vtc)"
 AC_SUBST(VTC_TESTS)
 
-# Check for pkg-config
-PKG_PROG_PKG_CONFIG
+AX_VMOD_BUILD(querystring)
+AX_CODE_COVERAGE
 
-# Checks for header files
-AC_HEADER_STDC
-
-# Check for python
-AC_CHECK_PROGS(PYTHON,
-	[python python3 python2],
-	[AC_MSG_ERROR([Python is needed to build this vmod.]) ])
-
-# backwards compat with older pkg-config 
-# source: https://github.com/varnish/libvmod-example/pull/18
-# - pull in AC_DEFUN from pkg.m4
-m4_ifndef([PKG_CHECK_VAR], [
-# PKG_CHECK_VAR(VARIABLE, MODULE, CONFIG-VARIABLE,
-# [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
-# -------------------------------------------
-# Retrieves the value of the pkg-config variable for the given module.
-AC_DEFUN([PKG_CHECK_VAR],
-[AC_REQUIRE([PKG_PROG_PKG_CONFIG])dnl
-AC_ARG_VAR([$1], [value of $3 for $2, overriding pkg-config])dnl
-
-_PKG_CONFIG([$1], [variable="][$3]["], [$2])
-AS_VAR_COPY([$1], [pkg_cv_][$1])
-
-AS_VAR_IF([$1], [""], [$5], [$4])dnl
-])# PKG_CHECK_VAR
-])
-
-# read Varnis's pkg-config
-PKG_CHECK_MODULES([libvarnishapi], [varnishapi])
-PKG_CHECK_VAR([LIBVARNISHAPI_PREFIX], [varnishapi], [prefix])
-PKG_CHECK_VAR([LIBVARNISHAPI_DATAROOTDIR], [varnishapi], [datarootdir])
-PKG_CHECK_VAR([LIBVARNISHAPI_BINDIR], [varnishapi], [bindir])
-PKG_CHECK_VAR([LIBVARNISHAPI_SBINDIR], [varnishapi], [sbindir])
-AC_SUBST([LIBVARNISHAPI_DATAROOTDIR])
-
-# Varnish include files tree
-VARNISH_VMOD_INCLUDES
-VARNISH_VMOD_DIR
-VARNISH_VMODTOOL
-
-# inherit the prefix from Varnish.
-# acessing ac_ variable because AC_PREFIX_DEFAULT acts too early
-ac_default_prefix=$LIBVARNISHAPI_PREFIX
-
-AC_SUBST([TEST_PATH], [$LIBVARNISHAPI_SBINDIR:$LIBVARNISHAPI_BINDIR:$PATH])
+LT_INIT([dlopen])
+AC_DISABLE_STATIC
 
 AC_CONFIG_FILES([
 	Makefile

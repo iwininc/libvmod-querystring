@@ -31,8 +31,8 @@ Makefile.in
 /m4/
 /lcov/
 
-/src/.vcc
-/src/vcc_if.c
-/src/vcc_if.h
+/src/.vcc_*
+/src/vcc_*_if.c
+/src/vcc_*_if.h
 /src/*.rst
 /src/tests/*.trs

@@ -39,7 +39,7 @@
 #include <vrt.h>
 #include <cache/cache.h>
 
-#include "vcc_if.h"
+#include "vcc_querystring_if.h"
 
 /* End Of Query Parameter */
 #define EOQP(c) (c == '\0' || c == '&')

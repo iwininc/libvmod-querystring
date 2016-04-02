@@ -28,9 +28,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AM_CPPFLAGS = @VMOD_INCLUDES@ $(CODE_COVERAGE_CPPFLAGS)
+AM_CPPFLAGS = $(VMOD_INCLUDES) $(CODE_COVERAGE_CPPFLAGS)
 AM_CFLAGS = -Wall -Werror -Wextra $(CODE_COVERAGE_CFLAGS)
-AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS)
+AM_LDFLAGS = $(VMOD_LDFLAGS) $(CODE_COVERAGE_LDFLAGS)
 
 if CODE_COVERAGE_ENABLED
 AM_CPPFLAGS += -DWITHOUT_ASSERTS
@@ -38,65 +38,34 @@ endif
 
 # VMOD library
 
-vmoddir = @VMOD_DIR@
 vmod_LTLIBRARIES = libvmod_querystring.la
 
-VCC_FILES = \
-	vcc_if.c \
-	vcc_if.h
-
-DOC_FILES = \
-	vmod_querystring.rst \
-	vmod_querystring.man.rst
-
-libvmod_querystring_la_LDFLAGS = \
-	-module \
-	-export-dynamic \
-	-avoid-version \
-	-shared
+dist_man_MANS = vmod_querystring.3
 
 libvmod_querystring_la_SOURCES = \
 	vmod_querystring.c
 
 nodist_libvmod_querystring_la_SOURCES = \
-	$(VCC_FILES)
+	vcc_querystring_if.c \
+	vcc_querystring_if.h
 
-$(srcdir)/vmod_querystring.c: $(VCC_FILES)
-
-$(VCC_FILES) $(DOC_FILES): .vcc
-
-.vcc: vmod.vcc
-	@echo vmodtool: @VMODTOOL@ $<
-	@@VMODTOOL@ $<
-	@touch $@
-
-# Documentation
-
-dist_man_MANS = vmod_querystring.3
-
-%.3: %.man.rst
-	${RST2MAN} $< $@
+@BUILD_VMOD_QUERYSTRING@
 
 # Test suite
 
 VMOD_FILE="$(abs_builddir)/.libs/libvmod_querystring.so"
 
 VTC_LOG_COMPILER = \
-	env PATH="@TEST_PATH@" \
+	env PATH="$(VMOD_TEST_PATH)" \
 	varnishtest -v \
 	-Dvmod_querystring="querystring from \"$(VMOD_FILE)\""
 
 TEST_EXTENSIONS = .vtc
 
-TESTS = @VTC_TESTS@
+TESTS = $(VTC_TESTS)
 
 # misc
 
 EXTRA_DIST = \
-	vmod.vcc \
-	@VTC_TESTS@
-
-CLEANFILES = \
-	$(VCC_FILES) \
-	$(DOC_FILES) \
-	$(dist_man_MANS)
+	vmod_querystring.vcc \
+	$(VTC_TESTS)
