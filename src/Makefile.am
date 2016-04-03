@@ -97,6 +97,7 @@ EXTRA_DIST = \
 	@VTC_TESTS@
 
 CLEANFILES = \
+	.vcc \
 	$(VCC_FILES) \
 	$(DOC_FILES) \
 	$(dist_man_MANS)
