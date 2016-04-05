@@ -123,9 +123,9 @@ clean-vmod-$1:
 	rm -f vmod_$1.rst vmod_$1.man.rst vmod_$1.3
 	rm -f .vcc_$1
 
-install: clean-vmod-$1-la
+install-exec-hook: clean-vmod-$1-la
 
-clean-vmod-$1-la: install-exec-am
+clean-vmod-$1-la:
 	rm -f \$(DESTDIR)\$(vmoddir)/libvmod_$1.la
 
 "
