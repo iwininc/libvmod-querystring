@@ -53,14 +53,10 @@ nodist_libvmod_querystring_la_SOURCES = \
 
 # Test suite
 
-VMOD_FILE="$(abs_builddir)/.libs/libvmod_querystring.so"
-
-VTC_LOG_COMPILER = \
-	env PATH="$(VMOD_TEST_PATH)" \
-	varnishtest -v \
-	-Dvmod_querystring="querystring from \"$(VMOD_FILE)\""
-
+AM_TESTS_ENVIRONMENT = PATH="$(VMOD_TEST_PATH)"
 TEST_EXTENSIONS = .vtc
+VTC_LOG_COMPILER = varnishtest -v
+AM_VTC_LOG_FLAGS = -Dvmod_querystring="$(VMOD_QUERYSTRING)"
 
 TESTS = $(VTC_TESTS)
 

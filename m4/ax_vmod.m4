@@ -101,6 +101,12 @@ AC_DEFUN([AX_VMOD_BUILD], [
 
 	AC_REQUIRE([AX_VMOD])
 
+	VMOD_FILE="\$(abs_builddir)/.libs/libvmod_$1.so"
+	AC_SUBST(m4_toupper(VMOD_$1_FILE), [$VMOD_FILE])
+
+	VMOD_IMPORT="querystring from \\\"$VMOD_FILE\\\""
+	AC_SUBST(m4_toupper(VMOD_$1), [$VMOD_IMPORT])
+
 	VMOD_RULES="
 
 vmod_$1.lo: vcc_$1_if.c vcc_$1_if.h
